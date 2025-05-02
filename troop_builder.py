@@ -35,20 +35,26 @@ def generate_march(num_marches, max_march_size, infantry_t11, lancer_t11, marksm
 
     return marches
 
-def buffs_section():
+def buffs_section(max_march_size):
     st.subheader('Buffs')
     pet_buff = st.selectbox('Select the level/bonus of your Snow Ape Pet Buff',
-                            ("Level 1 - 1500" ,
-                             "Level 2 - 3000",
-                             "Level 3 - 4500",
-                             "Level 4 - 6000",
-                             "Level 5 - 7500",
-                             "Level 6 - 9000",
-                             "Level 7 - 10500",
-                             "Level 8 - 12000",
-                             "Level 9 - 13500",
-                             "Level 10 - 15000"), index=0, )
-    pet_buff = int(pet_buff.split('-')[1].strip()) if pet_buff else 0
+                            (
+                                "No Buff",
+                                "Level 1 - 1500" ,
+                                "Level 2 - 3000",
+                                "Level 3 - 4500",
+                                "Level 4 - 6000",
+                                "Level 5 - 7500",
+                                "Level 6 - 9000",
+                                "Level 7 - 10500",
+                                "Level 8 - 12000",
+                                "Level 9 - 13500",
+                                "Level 10 - 15000"), index=0,
+                            )
+    if pet_buff == "No Buff":
+        pet_buff = 0
+    else:
+        pet_buff = int(pet_buff.split('-')[1].strip()) if pet_buff else 0
 
     city_buff_10 = st.checkbox('Apply 10% City Buff')
     city_buff_20 = st.checkbox('Apply 20% City Buff')
@@ -63,18 +69,28 @@ def buffs_section():
     minister_buff_enabled = st.checkbox('Apply Minister of Strategy Buff (2500 Flat Bonus)')
     minister_buff = 2500 if minister_buff_enabled else 0
     st.write('### Buffs Summary')
-    st.write(f"Pet Buff: {pet_buff}, City Buff: {city_buff}%, Minister Buff: {minister_buff}")
+    # Display all the buffs but the city buff both in percentage and flat value
+    st.write(f"Pet Buff: {pet_buff} troops" if pet_buff else "No Pet Buff Selected")
+    # Display the city buff in percentage and flat value
+    st.write(f"City Buff: {city_buff}% (Flat Value: {int(max_march_size * city_buff / 100)} troops)" if city_buff else "No City Buff Selected")
+    st.write(f"Minister of Strategy Buff: {minister_buff} troops" if minister_buff else "No Minister Buff Selected")
+    st.write("Total Buff: ", pet_buff + city_buff + minister_buff)
+    st.write("Total Buffed March Size: ", max_march_size + pet_buff + int(max_march_size * city_buff / 100) + minister_buff)
+
     return  pet_buff, city_buff, minister_buff
 
 def main():
     st.set_page_config(page_title="Troop Manager", layout="centered")
     st.title('Troop Formation Builder & Ratio Optimizer')
-
-    pet_buff, city_buff, minister_buff = buffs_section()
-
     st.header("March Setup", divider="blue", help="Setup your Marches and Troops.")
-    num_marches = st.selectbox('Number of Marches', options=[1, 2, 3, 4, 5, 6, 7], index=0)
     max_march_size = st.number_input('Max March Size', min_value=1, value=1000, format="%d")
+    pet_buff, city_buff, minister_buff = buffs_section(max_march_size)
+
+
+
+    st.header("Optimize Ratios", divider="blue", help="Optimize your troop ratios  according to your troops and buffs.")
+    ratio_type = st.selectbox('Select Ratio Type', ['Bear'])  # Add more options here
+    num_marches = st.selectbox('Number of Marches', options=[1, 2, 3, 4, 5, 6, 7], index=0)
 
     st.subheader('T11 Troops')
     infantry_t11 = st.number_input('Infantry T11', min_value=0, value=0, format="%d")
@@ -86,8 +102,13 @@ def main():
     lancer_t10 = st.number_input('Lancer T10', min_value=0, value=0, format="%d")
     marksman_t10 = st.number_input('Marksman T10', min_value=0, value=0, format="%d")
 
-    st.header("Optimize Ratios", divider="blue", help="Optimize your troop ratios  according to your troops and buffs.")
-    ratio_type = st.selectbox('Select Ratio Type', ['Bear'])  # Add more options here
+    st.subheader("Total Available Troops")
+    total_infantry = infantry_t10 + infantry_t11
+    total_lancer = lancer_t10 + lancer_t11
+    total_marksman = marksman_t10 + marksman_t11
+    st.write(f"Total Infantry: {total_infantry:,}" if total_infantry else "No Infantry Troops")
+    st.write(f"Total Lancer: {total_lancer:,}" if total_lancer else "No Lancer Troops")
+    st.write(f"Total Marksman: {total_marksman:,}" if total_marksman else "No Marksman Troops")
 
     if st.button('Optimize Ratios'):
         optimized_ratio = optimize_ratio(num_marches, max_march_size, infantry_t11, lancer_t11, marksman_t11,
@@ -139,6 +160,42 @@ def main():
                 'marksman': marksman_percent
             })
 
+    if use_same_ratio:
+        simulated_infantry = int((infantry_percent / 100) * (
+                    max_march_size * (1 + city_buff / 100) + minister_buff + pet_buff)) * num_marches
+        simulated_lancer = int(
+            (lancer_percent / 100) * (max_march_size * (1 + city_buff / 100) + minister_buff + pet_buff)) * num_marches
+        simulated_marksman = int((marksman_percent / 100) * (
+                    max_march_size * (1 + city_buff / 100) + minister_buff + pet_buff)) * num_marches
+        st.markdown(
+            f"**Infantry:** {total_infantry:,} _(Needs: {simulated_infantry:,})_ | **Lancer:** {total_lancer:,} _(Needs: {simulated_lancer:,})_ | **Marksman:** {total_marksman:,} _(Needs: {simulated_marksman:,})_")
+    else:
+        for i in range(num_marches):
+            inf_p = st.session_state.get(f"inf_{i}", 0)
+            lan_p = st.session_state.get(f"lan_{i}", 0)
+            mar_p = st.session_state.get(f"mar_{i}", 0)
+            sim_size = int(max_march_size * (1 + city_buff / 100) + minister_buff + pet_buff)
+            inf_amt = int((inf_p / 100) * sim_size)
+            lan_amt = int((lan_p / 100) * sim_size)
+            mar_amt = int((mar_p / 100) * sim_size)
+            st.markdown(
+                f"**March {i + 1}:** Infantry _(Needs: {inf_amt:,})_ | Lancer _(Needs: {lan_amt:,})_ | Marksman _(Needs: {mar_amt:,})_")
+
+        simulated_infantry = 0
+        simulated_lancer = 0
+        simulated_marksman = 0
+        for i in range(num_marches):
+            inf_p = st.session_state.get(f"inf_{i}", 0)
+            lan_p = st.session_state.get(f"lan_{i}", 0)
+            mar_p = st.session_state.get(f"mar_{i}", 0)
+            sim_size = int(max_march_size * (1 + city_buff / 100) + minister_buff + pet_buff)
+            simulated_infantry += int((inf_p / 100) * sim_size)
+            simulated_lancer += int((lan_p / 100) * sim_size)
+            simulated_marksman += int((mar_p / 100) * sim_size)
+        st.markdown(
+            f"**Infantry:** {total_infantry:,} _(Needs: {simulated_infantry:,})_ | **Lancer:** {total_lancer:,} _(Needs: {simulated_lancer:,})_ | **Marksman:** {total_marksman:,} _(Needs: {simulated_marksman:,})_")
+
+
     if st.button('Generate Marches'):
         try:
             marches = generate_march(num_marches, max_march_size, infantry_t11, lancer_t11, marksman_t11,
@@ -169,7 +226,7 @@ def optimize_ratio(num_marches, max_march_size, infantry_t11, lancer_t11, marksm
         'Infantry Focus': ['infantry', 'lancer', 'marksman']
     }
 
-    selected_priority = ratios.get(ratio_type, ratios['Balanced'])
+    selected_priority = ratios.get(ratio_type, ratios['Bear'])
     max_total_troops = num_marches * effective_march_size
 
     adjusted_troops = {'infantry': 0, 'lancer': 0, 'marksman': 0}
