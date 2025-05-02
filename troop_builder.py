@@ -1,12 +1,7 @@
 import streamlit as st
 
 def generate_march(num_marches, max_march_size, infantry_t11, lancer_t11, marksman_t11, infantry_t10, lancer_t10,
-                   marksman_t10, infantry_percent, lancer_percent, marksman_percent, pet_buff, city_buff, minister_buff):
-    if infantry_percent + lancer_percent + marksman_percent != 100:
-        raise ValueError("The total percentage must equal 100%.")
-
-
-    # Apply selected buffs to max march size
+                   marksman_t10, ratios, pet_buff, city_buff, minister_buff):
     total_buff_percent = city_buff
     effective_march_size = int(max_march_size * (1 + total_buff_percent / 100) + minister_buff + pet_buff)
 
@@ -18,12 +13,15 @@ def generate_march(num_marches, max_march_size, infantry_t11, lancer_t11, marksm
 
     marches = [{'infantry': 0, 'lancer': 0, 'marksman': 0, 'total': 0} for _ in range(num_marches)]
 
-    for march in marches:
-        total_capacity = effective_march_size
+    for i, march in enumerate(marches):
+        r = ratios[i]
+        if r['infantry'] + r['lancer'] + r['marksman'] != 100:
+            raise ValueError(f"March {i+1} ratios must total 100%.")
 
-        infantry_troops = int((infantry_percent / 100) * total_capacity)
-        lancer_troops = int((lancer_percent / 100) * total_capacity)
-        marksman_troops = int((marksman_percent / 100) * total_capacity)
+        total_capacity = effective_march_size
+        infantry_troops = int((r['infantry'] / 100) * total_capacity)
+        lancer_troops = int((r['lancer'] / 100) * total_capacity)
+        marksman_troops = int((r['marksman'] / 100) * total_capacity)
 
         march['infantry'] = min(infantry_troops, total_troops['infantry'])
         march['lancer'] = min(lancer_troops, total_troops['lancer'])
@@ -100,22 +98,58 @@ def main():
             st.write(f"{troop_type.capitalize()}: {percent:.2f}%")
 
     st.header("Generate Marches" , divider="blue", help="Generate your Marches with the selected Troops and Buffs.")
-    infantry_percent = st.number_input('Infantry %', min_value=0.0, max_value=100.0, value=33.33, step=0.01, format="%.2f")
-    lancer_percent = st.number_input('Lancer %', min_value=0.0, max_value=100.0, value=33.33, step=0.01, format="%.2f")
-    marksman_percent = st.number_input('Marksman %', min_value=0.0, max_value=100.0, value=33.33, step=0.01, format="%.2f")
+    st.header("March Ratio Selection")
+    use_same_ratio = st.checkbox("Use same ratio for all marches", value=True)
+    ratios = []
+
+    if use_same_ratio:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            infantry_percent = st.number_input('Infantry %', min_value=0.0, max_value=100.0, value=33.33, step=0.01,
+                                               format="%.2f", key="global_inf")
+        with col2:
+            lancer_percent = st.number_input('Lancer %', min_value=0.0, max_value=100.0, value=33.33, step=0.01,
+                                             format="%.2f", key="global_lan")
+        with col3:
+            marksman_percent = st.number_input('Marksman %', min_value=0.0, max_value=100.0, value=33.33, step=0.01,
+                                               format="%.2f", key="global_mar")
+        for _ in range(num_marches):
+            ratios.append({
+                'infantry': infantry_percent,
+                'lancer': lancer_percent,
+                'marksman': marksman_percent
+            })
+    else:
+        for i in range(num_marches):
+            st.subheader(f"March {i + 1} Ratios")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                infantry_percent = st.number_input(f'Infantry % (M{i + 1})', min_value=0.0, max_value=100.0,
+                                                   value=33.33, step=0.01, format="%.2f", key=f"inf_{i}")
+            with col2:
+                lancer_percent = st.number_input(f'Lancer % (M{i + 1})', min_value=0.0, max_value=100.0, value=33.33,
+                                                 step=0.01, format="%.2f", key=f"lan_{i}")
+            with col3:
+                marksman_percent = st.number_input(f'Marksman % (M{i + 1})', min_value=0.0, max_value=100.0,
+                                                   value=33.33, step=0.01, format="%.2f", key=f"mar_{i}")
+
+            ratios.append({
+                'infantry': infantry_percent,
+                'lancer': lancer_percent,
+                'marksman': marksman_percent
+            })
 
     if st.button('Generate Marches'):
         try:
             marches = generate_march(num_marches, max_march_size, infantry_t11, lancer_t11, marksman_t11,
-                                      infantry_t10, lancer_t10, marksman_t10, infantry_percent, lancer_percent,
-                                      marksman_percent, pet_buff, city_buff, minister_buff)
+                                     infantry_t10, lancer_t10, marksman_t10, ratios,
+                                     pet_buff, city_buff, minister_buff)
             st.write('### March Formation Results')
             for i, march in enumerate(marches, 1):
-                st.write(f"March {i}: Infantry={march['infantry']}, Lancer={march['lancer']}, Marksman={march['marksman']}, Total={march['total']}")
+                st.write(
+                    f"March {i}: Infantry={march['infantry']}, Lancer={march['lancer']}, Marksman={march['marksman']}, Total={march['total']}")
         except ValueError as e:
             st.error(str(e))
-
-
 
 def optimize_ratio(num_marches, max_march_size, infantry_t11, lancer_t11, marksman_t11, infantry_t10, lancer_t10,
                    marksman_t10, ratio_type, pet_buff, city_buff, minister_buff):
