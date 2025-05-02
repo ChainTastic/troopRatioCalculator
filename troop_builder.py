@@ -147,7 +147,7 @@ def main():
             st.write('### March Formation Results')
             for i, march in enumerate(marches, 1):
                 st.write(
-                    f"March {i}: Infantry={march['infantry']}, Lancer={march['lancer']}, Marksman={march['marksman']}, Total={march['total']}")
+                    f"March {i}: Infantry = {march['infantry']}, Lancer = {march['lancer']}, Marksman = {march['marksman']}, Total = {march['total']}")
         except ValueError as e:
             st.error(str(e))
 
