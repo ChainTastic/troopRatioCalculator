@@ -15,7 +15,7 @@ def generate_march(num_marches, max_march_size, infantry_t11, lancer_t11, marksm
 
     for i, march in enumerate(marches):
         r = ratios[i]
-        if r['infantry'] + r['lancer'] + r['marksman'] != 100:
+        if round(r['infantry'] + r['lancer'] + r['marksman'], 2) != 100.0:
             raise ValueError(f"March {i+1} ratios must total 100%.")
 
         total_capacity = effective_march_size
