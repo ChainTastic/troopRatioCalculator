@@ -134,11 +134,16 @@ def render_ratio_optimization_section(troops: TroopCount, troop_manager: TroopMa
     """Render the ratio optimization section and return the number of marches and optimized ratio."""
     st.header("Optimize Ratios", divider="blue")
 
-    formation_ratios = {"Bear": {"infantry": 10, "lancer": 30, "marksman": 60},
-        "Balanced": {"infantry": 33.33, "lancer": 33.33, "marksman": 33.34},
+    formation_ratios = {
+        "Bear": {"infantry": 10, "lancer": 30, "marksman": 60},
+        "Balanced": {"infantry": 34, "lancer": 33, "marksman": 33},
         "Marksman Rush": {"infantry": 5, "lancer": 15, "marksman": 80},
         "Lancer Charge": {"infantry": 5, "lancer": 85, "marksman": 10},
-        "Infantry Wall": {"infantry": 80, "lancer": 10, "marksman": 10}, }
+        "Infantry Wall": {"infantry": 80, "lancer": 10, "marksman": 10},
+        "Standard Formation": {"infantry": 45, "lancer": 10, "marksman": 45},
+        "Garrison": {"infantry": 50, "lancer": 40, "marksman": 10},
+        "Rally": {"infantry": 30, "lancer": 20, "marksman": 50}
+    }
 
     for name, values in formation_ratios.items():
         st.markdown(

@@ -88,10 +88,13 @@ class TroopManager:
         base_ratios = {
             "Bear": {"infantry": 10, "lancer": 30, "marksman": 60},
             "Infantry Focused": {"infantry": 60, "lancer": 30, "marksman": 10},
-            "Balanced": {"infantry": 33.33, "lancer": 33.33, "marksman": 33.34},
+            "Balanced": {"infantry": 33, "lancer": 33, "marksman": 34},
             "Lancer Charge": {"infantry": 5, "lancer": 85, "marksman": 10},
             "Marksman Rush": {"infantry": 5, "lancer": 15, "marksman": 80},
-            "Infantry Wall": {"infantry": 80, "lancer": 10, "marksman": 10}
+            "Infantry Wall": {"infantry": 80, "lancer": 10, "marksman": 10},
+            "Standard Formation": {"infantry": 45, "lancer": 10, "marksman": 45},
+            "Garrison": {"infantry": 50, "lancer": 40, "marksman": 10},
+            "Rally": {"infantry": 30, "lancer": 20, "marksman": 50}
         }.get(ratio_type, {"infantry": 33.33, "lancer": 33.33, "marksman": 33.34})
 
         # Calculate ideal troop count using ceil to avoid rounding down
